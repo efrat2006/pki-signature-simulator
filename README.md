@@ -53,7 +53,7 @@ An **Nginx** reverse proxy providing a single TLS entry point and routing reques
 
 | Layer | Technologies |
 |-------|--------------|
-| Certificate Authority | Java, Spring Boot, Spring Data JPA, BouncyCastle, PostgreSQL |
+| Certificate Authority - CA | Java, Spring Boot, Spring Data JPA, BouncyCastle, PostgreSQL |
 | Desktop client | Java, JavaFX, Hibernate, Apache PDFBox, OpenCV |
 | Identity verification | Python, FastAPI, MediaPipe, OpenCV, EasyOCR |
 | Gateway | Nginx, TLS |
