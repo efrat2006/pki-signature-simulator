@@ -1,4 +1,4 @@
-# PKI Signature Simulator (AuthentiSign)
+# PKI Signature Simulator
 
 A **PKI-based digital signature platform** with **biometric identity verification**, built as a final project. The system lets a verified user digitally sign PDF documents using certificates issued by a custom Certificate Authority, after proving their identity through real-time face-liveness detection and ID-card matching.
 
