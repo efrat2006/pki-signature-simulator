@@ -1,0 +1,60 @@
+##############################################
+#  AuthentiSign — .gitignore
+##############################################
+
+# ---------- קבצים רגישים: מפתחות, תעודות, סודות ----------
+# לעולם אין להעלות מפתחות פרטיים או תעודות לריפו ציבורי
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+*.truststore
+
+# קבצי הגדרות עם סיסמאות (מעלים רק גרסת .example)
+application.properties
+application-*.properties
+*.env
+.env
+secrets.*
+
+# ---------- Java / Maven ----------
+target/
+out/
+build/
+*.class
+*.jar
+*.war
+hs_err_pid*.log
+
+# ---------- Python ----------
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# ---------- Nginx (API Gateway) ----------
+logs/
+*.log
+*.pid
+temp/
+nginx.exe
+
+# ---------- IDE ----------
+.idea/
+*.iml
+.vscode/
+*.iws
+
+# ---------- מערכת הפעלה ----------
+.DS_Store
+Thumbs.db
+desktop.ini
