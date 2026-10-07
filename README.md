@@ -61,6 +61,5 @@ An **Nginx** reverse proxy providing a single TLS entry point and routing reques
 
 ## Security Notes
 
-This repository contains **source code only**. Private keys, certificates (`.p12`, `.pem`, `.key`), and configuration secrets are intentionally excluded via `.gitignore` and must be generated locally. Configuration files are provided as `.example` templates.
-
+This repository contains **source code only**. Private keys, certificates (`.p12`, `.pem`, `.key`), and configuration secrets are intentionally excluded via `.gitignore` and must be generated locally. Secrets such as database and email passwords are read from environment variables — see SETUP.md for setup instructions.
 > This is an academic project built to explore PKI, digital signatures, and biometric identity verification. It is not intended for production use.
