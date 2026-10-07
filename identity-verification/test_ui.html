@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אימות זהות — בדיקה</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 24px;
+    color: #7dd3fc;
+  }
+
+  .server-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    justify-content: center;
+  }
+  .server-row label { font-size: .85rem; color: #94a3b8; }
+  .server-row input {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #e2e8f0;
+    padding: 6px 12px;
+    width: 260px;
+    font-size: .9rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 1rem;
+    color: #7dd3fc;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-badge {
+    background: #1d4ed8;
+    color: #fff;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  /* ── ID upload ── */
+  .upload-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .upload-box {
+    flex: 1;
+    border: 2px dashed #334155;
+    border-radius: 8px;
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s;
+    position: relative;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .upload-box:hover { border-color: #7dd3fc; }
+  .upload-box img {
+    max-width: 100%;
+    max-height: 80px;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+  .upload-box span { font-size: .8rem; color: #64748b; }
+  .upload-box input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+  .btn-success { background: #16a34a; color: #fff; }
+  .btn-success:hover:not(:disabled) { background: #15803d; }
+  .btn-danger  { background: #dc2626; color: #fff; }
+  .btn-danger:hover:not(:disabled)  { background: #b91c1c; }
+
+  /* ── OCR results ── */
+  .ocr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .field {
+    background: #0f172a;
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .field-label { font-size: .7rem; color: #64748b; margin-bottom: 2px; }
+  .field-value { font-size: .9rem; color: #f1f5f9; font-weight: 600; min-height: 1.2em; }
+
+  /* ── Camera ── */
+  #video {
+    width: 100%;
+    border-radius: 8px;
+    background: #0f172a;
+    display: block;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+  }
+  canvas { display: none; }
+
+  .cam-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .cam-controls .btn { flex: 1; }
+
+  /* ── Live metrics ── */
+  .metrics {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .metric {
+    background: #0f172a;
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .metric-label { font-size: .7rem; color: #64748b; }
+  .metric-value { font-size: 1.3rem; font-weight: 700; color: #7dd3fc; }
+
+  .progress-bar {
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #2563eb;
+    border-radius: 3px;
+    transition: width .3s;
+  }
+
+  /* ── Verdict ── */
+  #verdict-panel {
+    grid-column: 1 / -1;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 28px;
+  }
+  .verdict-icon { font-size: 3.5rem; line-height: 1; }
+  .verdict-title { font-size: 1.5rem; font-weight: 700; }
+  .verdict-sub   { font-size: .9rem; color: #94a3b8; }
+  .verdict-scores {
+    display: flex;
+    gap: 32px;
+    text-align: center;
+  }
+  .verdict-score-label { font-size: .75rem; color: #64748b; }
+  .verdict-score-val   { font-size: 1.6rem; font-weight: 700; }
+
+  .verdict-alive  .verdict-title { color: #4ade80; }
+  .verdict-alive  .verdict-icon  { filter: drop-shadow(0 0 12px #16a34a); }
+  .verdict-spoof  .verdict-title { color: #f87171; }
+  .verdict-spoof  .verdict-icon  { filter: drop-shadow(0 0 12px #dc2626); }
+  .verdict-unknown .verdict-title { color: #fbbf24; }
+
+  /* ── Log ── */
+  .log-box {
+    grid-column: 1 / -1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    height: 120px;
+    overflow-y: auto;
+    font-family: 'Consolas', monospace;
+    font-size: .78rem;
+    color: #64748b;
+  }
+  .log-box p { margin-bottom: 2px; }
+  .log-ok  { color: #4ade80; }
+  .log-err { color: #f87171; }
+  .log-info{ color: #7dd3fc; }
+
+  /* ── Status badge ── */
+  .status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: .75rem;
+    font-weight: 600;
+    margin-right: 8px;
+  }
+  .badge-idle     { background: #334155; color: #94a3b8; }
+  .badge-running  { background: #1d4ed8; color: #bfdbfe; }
+  .badge-done     { background: #14532d; color: #4ade80; }
+  .badge-error    { background: #7f1d1d; color: #fca5a5; }
+
+  #session-info { margin-bottom: 14px; font-size: .8rem; color: #475569; }
+</style>
+</head>
+<body>
+
+<h1>🔐 בדיקת אימות זהות</h1>
+
+<div class="server-row">
+  <label for="server-url">כתובת שרת:</label>
+  <input id="server-url" type="text" value="https://localhost:8443">
+</div>
+
+<div class="grid">
+
+  <!-- ── כרטיס 1: העלאת ת"ז ── -->
+  <div class="card">
+    <h2><span class="step-badge">1</span> העלאת תעודת זהות</h2>
+
+    <div id="session-info">
+      <span class="status-badge badge-idle" id="badge">ממתין</span>
+      Session: <span id="sid-display">—</span>
+    </div>
+
+    <div class="upload-row">
+      <div class="upload-box" id="front-box">
+        <input type="file" accept="image/*" id="front-file" onchange="previewImage(this,'front-box')">
+        <span>📷 חזית ת"ז</span>
+        <span id="front-name"></span>
+      </div>
+      <div class="upload-box" id="back-box">
+        <input type="file" accept="image/*" id="back-file" onchange="previewImage(this,'back-box')">
+        <span>📷 גב ת"ז (אופציונלי)</span>
+        <span id="back-name"></span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-upload" onclick="startSession()">
+      העלה תעודת זהות
+    </button>
+
+    <div class="ocr-grid" id="ocr-grid" style="display:none">
+      <div class="field">
+        <div class="field-label">שם פרטי</div>
+        <div class="field-value" id="f-first">—</div>
+      </div>
+      <div class="field">
+        <div class="field-label">שם משפחה</div>
+        <div class="field-value" id="f-last">—</div>
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <div class="field-label">תאריך לידה</div>
+        <div class="field-value" id="f-dob">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── כרטיס 2: מצלמה חיה ── -->
+  <div class="card">
+    <h2><span class="step-badge">2</span> וידאו חי</h2>
+
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <div id="cam-error" style="display:none; margin:8px 0; padding:10px; background:#450a0a; border-radius:8px; font-size:.85rem; color:#fca5a5; line-height:1.5;"></div>
+
+    <div class="cam-controls" style="margin-top:8px;">
+      <button class="btn" id="btn-cam" onclick="openCamera()"
+              style="background:#0f3460; color:#7dd3fc; flex:0 0 auto; width:auto; padding:10px 16px;">
+        📷 פתח מצלמה
+      </button>
+      <button class="btn btn-success" id="btn-start" onclick="startStream()" disabled>
+        ▶ התחל סטרימינג
+      </button>
+      <button class="btn btn-danger" id="btn-stop" onclick="stopStream()" disabled>
+        ■ עצור
+      </button>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">התאמת פנים (ממוצע)</div>
+        <div class="metric-value" id="m-match">—</div>
+        <div class="progress-bar"><div class="progress-fill" id="p-match" style="width:0%"></div></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">ריצות עין</div>
+        <div class="metric-value" id="m-blink">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">EAR (עיניים)</div>
+        <div class="metric-value" id="m-ear">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">חדות פנים</div>
+        <div class="metric-value" id="m-lap">—</div>
+      </div>
+      <div class="metric" style="grid-column:1/-1">
+        <div class="metric-label">פריימים שנשלחו</div>
+        <div class="metric-value" id="m-frames">0</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="p-frames" style="width:0%; background:#16a34a"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── תוצאה סופית ── -->
+  <div class="card" id="verdict-panel">
+    <div class="verdict-icon" id="v-icon">⏳</div>
+    <div class="verdict-title" id="v-title">מחכה לתוצאה…</div>
+    <div class="verdict-sub"  id="v-sub"></div>
+    <div class="verdict-scores">
+      <div>
+        <div class="verdict-score-label">ניקוד חיות</div>
+        <div class="verdict-score-val" id="v-liveness">—</div>
+      </div>
+      <div>
+        <div class="verdict-score-label">ניקוד התאמה</div>
+        <div class="verdict-score-val" id="v-match">—</div>
+      </div>
+      <div>
+        <div class="verdict-score-label">ריצות עין</div>
+        <div class="verdict-score-val" id="v-blinks">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── לוג ── -->
+  <div class="log-box" id="log"></div>
+
+</div><!-- /grid -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════════════
+let sessionId        = null;
+let ws               = null;
+let streaming        = false;
+let frameCount       = 0;
+let _streamInterval  = null;   // global so both startStream and stopStream can access it
+const CONCLUDE_FRAMES = 20;    // must match STREAM_CONCLUDE_FRAMES in config.py
+
+function getBase() {
+  return document.getElementById('server-url').value.replace(/\/$/, '');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Logging
+// ═══════════════════════════════════════════════════════════════════════════
+function log(msg, cls = '') {
+  const box = document.getElementById('log');
+  const p = document.createElement('p');
+  if (cls) p.className = cls;
+  p.textContent = new Date().toLocaleTimeString('he-IL') + '  ' + msg;
+  box.appendChild(p);
+  box.scrollTop = box.scrollHeight;
+}
+
+function setBadge(text, cls) {
+  const b = document.getElementById('badge');
+  b.textContent = text;
+  b.className = 'status-badge ' + cls;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Image preview
+// ═══════════════════════════════════════════════════════════════════════════
+function previewImage(input, boxId) {
+  const box = document.getElementById(boxId);
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // הסר span ישן, הוסף תמונה
+    box.querySelectorAll('img, span').forEach(el => el.remove());
+    const img = document.createElement('img');
+    img.src = e.target.result;
+    box.insertBefore(img, input);
+    const sp = document.createElement('span');
+    sp.textContent = file.name;
+    box.insertBefore(sp, input);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 1 — Session + ID upload
+// ═══════════════════════════════════════════════════════════════════════════
+async function startSession() {
+  const frontFile = document.getElementById('front-file').files[0];
+  if (!frontFile) { log('בחרי תמונת חזית של ת"ז תחילה', 'log-err'); return; }
+
+  document.getElementById('btn-upload').disabled = true;
+  setBadge('יוצר session…', 'badge-running');
+
+  try {
+    // יצירת session
+    const r1 = await fetch(`${getBase()}/api/v1/sessions`, { method: 'POST' });
+    if (!r1.ok) throw new Error(`Session creation failed: ${r1.status}`);
+    const d1 = await r1.json();
+    sessionId = d1.session_id;
+    document.getElementById('sid-display').textContent = sessionId.slice(0, 8) + '…';
+    log(`Session נוצר: ${sessionId}`, 'log-ok');
+
+    // העלאת ת"ז
+    setBadge('מעלה ת"ז…', 'badge-running');
+    const form = new FormData();
+    form.append('front', frontFile);
+    const backFile = document.getElementById('back-file').files[0];
+    if (backFile) form.append('back', backFile);
+
+    const r2 = await fetch(`${getBase()}/api/v1/sessions/${sessionId}/id-card`, {
+      method: 'POST', body: form
+    });
+    if (!r2.ok) {
+      const err = await r2.json().catch(() => ({ detail: r2.statusText }));
+      throw new Error(err.detail || r2.statusText);
+    }
+    const d2 = await r2.json();
+
+    // OCR fields
+    const id = d2.id_data;
+    document.getElementById('f-first').textContent = id.first_name    || '(לא זוהה)';
+    document.getElementById('f-last').textContent  = id.last_name     || '(לא זוהה)';
+    document.getElementById('f-dob').textContent   = id.date_of_birth || '(לא זוהה)';
+    document.getElementById('ocr-grid').style.display = 'grid';
+
+    log(`ת"ז הועלתה — פנים זוהו: ${d2.face_detected}`, 'log-ok');
+    setBadge('ת"ז אושרה ✓', 'badge-done');
+
+    // הפעל סטרימינג אם המצלמה כבר פתוחה
+    if (cameraReady) {
+      document.getElementById('btn-start').disabled = false;
+    } else {
+      await openCamera();
+    }
+
+  } catch (e) {
+    log('שגיאה: ' + e.message, 'log-err');
+    setBadge('שגיאה', 'badge-error');
+    document.getElementById('btn-upload').disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Camera
+// ═══════════════════════════════════════════════════════════════════════════
+let cameraReady = false;
+
+async function openCamera() {
+  const errBox = document.getElementById('cam-error');
+  errBox.style.display = 'none';
+
+  // getUserMedia לא קיים בדפדפן ישן או ב-http
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    const msg = 'הדפדפן אינו תומך בגישה למצלמה. ודאי שאת ב-HTTPS ושהדפדפן עדכני.';
+    errBox.textContent = '⚠️ ' + msg;
+    errBox.style.display = 'block';
+    log(msg, 'log-err');
+    return;
+  }
+
+  try {
+    document.getElementById('btn-cam').textContent = '⏳ מחכה להרשאה…';
+    document.getElementById('btn-cam').disabled = true;
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    // Wait for actual playback to start before marking camera ready
+    await new Promise((resolve, reject) => {
+      video.onplaying = resolve;
+      video.onerror  = reject;
+      video.play().catch(reject);
+    });
+    cameraReady = true;
+
+    document.getElementById('btn-cam').textContent = '✓ מצלמה פתוחה';
+    document.getElementById('btn-cam').style.background = '#14532d';
+    document.getElementById('btn-cam').style.color = '#4ade80';
+
+    // אפשר סטרימינג אם session קיים
+    if (sessionId) document.getElementById('btn-start').disabled = false;
+    log('מצלמה נפתחה', 'log-ok');
+
+  } catch (e) {
+    document.getElementById('btn-cam').textContent = '📷 נסי שוב';
+    document.getElementById('btn-cam').disabled = false;
+
+    let msg;
+    switch (e.name) {
+      case 'NotAllowedError':
+      case 'PermissionDeniedError':
+        msg = 'הרשאת המצלמה נדחתה.\n' +
+              '→ לחצי על צלמית המצלמה/המנעול בסרגל הכתובת ← "אפשר"\n' +
+              '→ לאחר מכן רעננו את הדף ולחצי שוב';
+        break;
+      case 'NotFoundError':
+      case 'DevicesNotFoundError':
+        msg = 'לא נמצאה מצלמה מחוברת למחשב.';
+        break;
+      case 'NotReadableError':
+      case 'TrackStartError':
+        msg = 'המצלמה תפוסה על ידי תוכנה אחרת (Zoom, Teams וכו\'). סגרי אותה ונסי שוב.';
+        break;
+      case 'OverconstrainedError':
+        msg = 'המצלמה לא תומכת ברזולוציה המבוקשת. מנסה שוב…';
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(s => { document.getElementById('video').srcObject = s; cameraReady = true; log('מצלמה נפתחה', 'log-ok'); })
+          .catch(() => {});
+        return;
+      default:
+        msg = `שגיאת מצלמה: ${e.name} — ${e.message}`;
+    }
+
+    errBox.style.whiteSpace = 'pre-line';
+    errBox.innerHTML = '❌ ' + msg.replace(/→/g, '<br>→');
+    errBox.style.display = 'block';
+    log('שגיאת מצלמה: ' + e.name, 'log-err');
+  }
+}
+
+// נסיון פתיחת מצלמה אוטומטי בטעינת הדף
+window.addEventListener('load', () => openCamera());
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 2 — WebSocket streaming
+// ═══════════════════════════════════════════════════════════════════════════
+async function startStream() {
+  if (!sessionId) { log('יש להעלות ת"ז תחילה', 'log-err'); return; }
+  if (streaming)  return;
+
+  const wsBase = getBase().replace(/^http/, 'ws');
+  ws = new WebSocket(`${wsBase}/ws/sessions/${sessionId}/stream`);
+  streaming = true;
+  frameCount = 0;
+
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-stop').disabled  = false;
+
+  // הצג פאנל תוצאה
+  const vp = document.getElementById('verdict-panel');
+  vp.style.display = 'flex';
+  vp.className = 'card';
+
+  log('WebSocket מחובר, שולח פריימים…', 'log-info');
+
+  ws.onopen = () => {
+    log('WebSocket מחובר, שולח פריימים…', 'log-info');
+    setBadge('סטרימינג…', 'badge-running');
+    _streamInterval = setInterval(sendFrames, 1000);  // 1fps — CPU server can't handle more
+  };
+
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.error) { log('שגיאת שרת: ' + msg.error, 'log-err'); return; }
+      updateMetrics(msg);
+      if (msg.concluded) {
+        clearInterval(_streamInterval);
+        _streamInterval = null;
+        onConcluded(msg);
+      }
+    } catch(err) {
+      log('שגיאת parse: ' + err.message, 'log-err');
+    }
+  };
+
+  ws.onerror = e => {
+    log('שגיאת WebSocket — בדקי שהשרת רץ ושיש הרשאת תעודה', 'log-err');
+    console.error('WS error:', e);
+    stopStream();
+  };
+  ws.onclose = (e) => {
+    streaming = false;
+    log(`WebSocket נסגר (קוד: ${e.code})`, e.code === 1000 ? 'log-info' : 'log-err');
+    console.log('WS closed:', e.code, e.reason);
+  };
+}
+
+// שולחים פריים, מחכים לתשובה מהשרת, ורק אז שולחים את הבא.
+// מונע הצפה של השרת שמעבד כל פריים 200-400ms על CPU.
+function sendFrames() {
+  if (!streaming || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width  = 640;
+  canvas.height = 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, 640, 480);
+
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(reader.result.split(',')[1]);
+        frameCount++;
+      }
+    };
+    reader.readAsDataURL(blob);
+  }, 'image/jpeg', 0.80);
+}
+
+// sendFrames נקרא מ-onmessage (אחרי שהשרת ענה) — ראה ws.onmessage למטה
+
+function stopStream() {
+  streaming = false;
+  if (_streamInterval) { clearInterval(_streamInterval); _streamInterval = null; }
+  if (ws) { ws.close(); ws = null; }
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-stop').disabled  = true;
+  setBadge('עצר', 'badge-idle');
+  log('סטרימינג הופסק', 'log-info');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Metrics update (per frame)
+// ═══════════════════════════════════════════════════════════════════════════
+function updateMetrics(msg) {
+  const matchPct = Math.round(msg.avg_match_score * 100);
+  document.getElementById('m-match').textContent  = matchPct + '%';
+  document.getElementById('p-match').style.width  = matchPct + '%';
+  document.getElementById('p-match').style.background =
+    matchPct >= 65 ? '#16a34a' : matchPct >= 45 ? '#d97706' : '#dc2626';
+
+  document.getElementById('m-blink').textContent  = msg.blink_count;
+  document.getElementById('m-ear').textContent    = msg.ear.toFixed(2);
+  document.getElementById('m-lap').textContent    = Math.round(msg.laplacian_var);
+  document.getElementById('m-frames').textContent = msg.frame;
+
+  const pct = Math.min(100, Math.round((msg.frame / CONCLUDE_FRAMES) * 100));
+  document.getElementById('p-frames').style.width = pct + '%';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Final verdict
+// ═══════════════════════════════════════════════════════════════════════════
+async function onConcluded(msg) {
+  streaming = false;
+  setBadge('הושלם', 'badge-done');
+  document.getElementById('btn-stop').disabled = true;
+
+  // קבל תוצאה מלאה מהשרת
+  let result = msg;
+  try {
+    const r = await fetch(`${getBase()}/api/v1/sessions/${sessionId}/result`);
+    if (r.ok) result = await r.json();
+  } catch {}
+
+  const liveness = result.liveness || msg.liveness || 'unknown';
+  const score    = result.liveness_score ?? msg.liveness_score ?? 0;
+  const match    = result.match ?? 'unknown';
+  const matchScore = result.match_score ?? 0;
+  const blinks   = result.blink_count ?? msg.blink_count ?? 0;
+
+  const vp = document.getElementById('verdict-panel');
+
+  let icon, title, sub, cls;
+  if (liveness === 'alive' && match === 'match') {
+    icon = '✅'; title = 'זהות אומתה בהצלחה!';
+    sub  = 'האדם חי ותואם לתעודת הזהות'; cls = 'verdict-alive';
+  } else if (liveness === 'spoof') {
+    icon = '🚫'; title = 'בדיקת חיות נכשלה';
+    sub  = 'ייתכן ניסיון זיוף (תמונה / וידאו מוקלט)'; cls = 'verdict-spoof';
+  } else if (match === 'no_match') {
+    icon = '❌'; title = 'הפנים אינן תואמות';
+    sub  = 'האדם בוידאו שונה מהאדם בתעודת הזהות'; cls = 'verdict-spoof';
+  } else {
+    icon = '⚠️'; title = 'לא הוכרע';
+    sub  = result.message || 'אין מספיק נתונים לתוצאה חד-משמעית'; cls = 'verdict-unknown';
+  }
+
+  vp.className = 'card ' + cls;
+  document.getElementById('v-icon').textContent    = icon;
+  document.getElementById('v-title').textContent   = title;
+  document.getElementById('v-sub').textContent     = sub;
+  document.getElementById('v-liveness').textContent = (score * 100).toFixed(0) + '%';
+  document.getElementById('v-match').textContent   = (matchScore * 100).toFixed(0) + '%';
+  document.getElementById('v-blinks').textContent  = blinks;
+
+  log(`תוצאה: ${title} | חיות=${(score*100).toFixed(0)}% | התאמה=${(matchScore*100).toFixed(0)}%`,
+      liveness === 'alive' && match === 'match' ? 'log-ok' : 'log-err');
+}
+</script>
+</body>
+</html>

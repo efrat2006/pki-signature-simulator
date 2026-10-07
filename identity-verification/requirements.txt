@@ -1,0 +1,28 @@
+# ── Web framework ─────────────────────────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+
+# ── Numerics / image processing ───────────────────────────────────────────────
+numpy>=1.24.0
+Pillow>=10.0.0
+opencv-python>=4.8.0   # mediapipe and easyocr both work with this variant
+
+# ── Face detection + recognition (ArcFace via ONNX Runtime) ──────────────────
+# Models (~300 MB) are downloaded automatically into ~/.insightface/models/
+insightface>=0.7.3
+onnxruntime>=1.17.0
+
+# ── Liveness: face-mesh landmarks (blink + head-pose) ────────────────────────
+# MediaPipe face-mesh model (~3 MB) is bundled with the package
+mediapipe>=0.10.0
+
+# ── OCR: Hebrew + English text on ID card ────────────────────────────────────
+# EasyOCR models (~100 MB) are downloaded automatically into ~/.EasyOCR/
+# NOTE: easyocr declares opencv-python-headless as a dep, but at runtime it
+#       works fine with the opencv-python variant installed above.
+#       Use install.ps1 (or install.sh) to avoid the pip conflict.
+easyocr>=1.7.0
+
+# ── Pydantic (FastAPI uses v2) ────────────────────────────────────────────────
+pydantic>=2.0.0
